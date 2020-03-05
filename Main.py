@@ -5,6 +5,10 @@
 @Author: Fabian Fey
 """
 
+# ToDo: Change the mean color of everything to the mean color of the top most colors
+# (this should then only include colors of the same pallette)
+# Use clustering:
+# https://www.dataquest.io/blog/tutorial-colors-image-clustering-python/
 
 import os
 
