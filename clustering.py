@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 """
 
@@ -11,118 +11,163 @@
 # https://www.dataquest.io/blog/tutorial-colors-image-clustering-python/
 
 import os
+import sys
+from logzero import logger
 
 CUR_PATH = os.path.dirname(os.path.realpath(__file__))
-WALLPAPER_PATH_WIN = "D:\MEGA\Bilder\Wallpaper"
-# WALLPAPER_PATH_LINUX = "/mnt/d/MEGA/Bilder/Wallpaper"
 WALLPAPER_PATH_LINUX = "/home/fabian/Mega/Bilder/Wallpaper"
-# WALLPAPER_PATH_WIN = WALLPAPER_PATH_LINUX = os.path.join(CUR_PATH, "test_pics")
+NUMBERCLUSTERS = 7
 
+import matplotlib
 from matplotlib import image as img
 from matplotlib import pyplot as plt
+
 from mpl_toolkits.mplot3d import Axes3D
-
-image = img.imread(WALLPAPER_PATH_LINUX + '/Fantasy (129).jpg')
-
-print(image.shape)
-
-# plt.imshow(image)
-# plt.show()
-
-
-
-# Store all RGB values in lists
-r = []
-g = []
-b = []
-for line in image:
-    for pixel in line:
-        temp_r, temp_g, temp_b = pixel
-        r.append(temp_r)
-        g.append(temp_g)
-        b.append(temp_b)
-
-# fig = plt.figure()
-# ax = Axes3D(fig)
-# ax.scatter(r, g, b)
-# plt.show()
 
 import pandas as pd
 
-df = pd.DataFrame({'red': r, 'blue': b, 'green': g})
-
-# Standardize the variables by dividing each data point by its standard deviation. We will use the whiten() method of the vq class.
-from scipy.cluster.vq import whiten
-
-df['scaled_red'] = whiten(df['red'])
-df['scaled_blue'] = whiten(df['blue'])
-df['scaled_green'] = whiten(df['green'])
-df.sample(n = 10)
-
-from scipy.cluster.vq import kmeans
-
-# Cluster for 5 colors
-cluster_centers, distortion = kmeans(df[['scaled_red', 'scaled_green', 'scaled_blue']], 16)
-
-# print(cluster_centers)
-
-colors = []
-r_std, g_std, b_std = df[['red', 'green', 'blue']].std()
-
-for cluster_center in cluster_centers:
-    scaled_r, scaled_g, scaled_b = cluster_center
-    colors.append((
-    scaled_r * r_std / 255,
-    scaled_g * g_std / 255,
-    scaled_b * b_std / 255
-    ))
-
-# print(colors)
-# plt.imshow([colors])
-# plt.show()
-
-import math
-rbgColors = []
-r_std, g_std, b_std = df[['red', 'green', 'blue']].std()
-
-for cluster_center in cluster_centers:
-    scaled_r, scaled_g, scaled_b = cluster_center
-    rbgColors.append((
-    math.ceil(scaled_r * r_std),
-    math.ceil(scaled_g * g_std),
-    math.ceil(scaled_b * b_std)
-    ))
-
-print(rbgColors)
-
-# Format RGB to Hex
-import matplotlib
-hexColors = []
-for color in colors:
-    hexColors.append(matplotlib.colors.to_hex(color))
-
-print("hexColors:", hexColors)
+from scipy.cluster.vq import whiten, kmeans
 
 import colorsys
-def get_hsv(hexrgb):
-    # given a color specification in hex RGB, returns its HSV color:
-    hexrgb = hexrgb.lstrip("#")   # in case you have Web color specs
-    r, g, b = (int(hexrgb[i:i+2], 16) / 255.0 for i in range(0,5,2))
-    return colorsys.rgb_to_hsv(r, g, b)
+import math
 
-# sort your list of RGB hex colors by hue:
-hexColors.sort(key=get_hsv)
-print("hexColors sorted:", hexColors)
+from colorChanger import ChangeColors
 
-# Format HEX to RGB
-rgbColors_sorted = []
-for color in hexColors:
-    rgbColors_sorted.append(matplotlib.colors.to_rgb(color))
 
-print("rgbColors_sorted 0-1:", rgbColors_sorted)
+def main():
+    # ToDo: Add folder input
 
-fig, axs = plt.subplots(2)
+    for file in os.listdir(WALLPAPER_PATH_LINUX):
+            if "2" not in file:
+                logger.info("Filename: %s", file)
+                df = loadPicture(WALLPAPER_PATH_LINUX, file)
+                rgbColorsList255, rgbColorsList = clustering(df)
+                hexColorsList = rgbToHex(rgbColorsList)
+                sorted_hexColorsList = sortColors(hexColorsList)
+                ChangeColors(sorted_hexColorsList)
+                drawSortedColors(sorted_hexColorsList)
+                sys.exit()
 
-axs[0].imshow([rbgColors])
-axs[1].imshow([rgbColors_sorted])
-plt.show()
+
+# def iterateFiles():
+#     """
+#     Ignores any gifs and already categorized pictures
+#     """
+#     try:
+#         for file in os.listdir(WALLPAPER_PATH_LINUX):
+#             if ".gif" not in file:
+#                 colorProcessing(WALLPAPER_PATH_LINUX, file)
+#     except:
+#         for file in os.listdir(WALLPAPER_PATH_WIN):
+#             if ".gif" not in file:
+#                 colorProcessing(WALLPAPER_PATH_WIN, file)
+
+
+def loadPicture(path, file):
+    """
+    Loads a picture and returnes a pandas dataframe with all pixels devided in RGB values
+    """
+    image = img.imread(WALLPAPER_PATH_LINUX + '/' + file)
+
+    logger.info("image.shape: %s", image.shape)
+
+    # Store all RGB values in lists
+    r = []
+    g = []
+    b = []
+    for line in image:
+        for pixel in line:
+            temp_r, temp_g, temp_b = pixel
+            r.append(temp_r)
+            g.append(temp_g)
+            b.append(temp_b)
+
+    df = pd.DataFrame({'red': r, 'blue': b, 'green': g})
+
+    return df
+
+
+def clustering(df):
+    """
+    Standardize the variables by dividing each data point by its standard deviation. We will use the whiten() method of the vq class.
+    """
+
+    df['scaled_red'] = whiten(df['red'])
+    df['scaled_blue'] = whiten(df['blue'])
+    df['scaled_green'] = whiten(df['green'])
+    df.sample(n = 10)
+
+    # Cluster for 5 colors
+    cluster_centers, distortion = kmeans(df[['scaled_red', 'scaled_green', 'scaled_blue']], NUMBERCLUSTERS)
+
+    # print(cluster_centers)
+
+    rgbColorsList = []
+    rgbColorsList255 = []
+    r_std, g_std, b_std = df[['red', 'green', 'blue']].std()
+
+    for cluster_center in cluster_centers:
+        scaled_r, scaled_g, scaled_b = cluster_center
+        rgbColorsList255.append((
+        math.ceil(scaled_r * r_std),
+        math.ceil(scaled_g * g_std),
+        math.ceil(scaled_b * b_std)
+        ))
+        rgbColorsList.append((
+        math.ceil(scaled_r * r_std) / 255,
+        math.ceil(scaled_g * g_std) / 255,
+        math.ceil(scaled_b * b_std) / 255
+        ))
+    
+    logger.info(rgbColorsList)
+
+    return rgbColorsList255, rgbColorsList
+
+
+def rgbToHex(colorsList):
+    """"
+    Format RGB to Hex
+    colorsList needs to be RGB with 0-1
+    """
+    hexColors = []
+    for color in colorsList:
+        hexColors.append(matplotlib.colors.to_hex(color))
+
+    logger.info("hexColors: %s", hexColors)
+
+    return(hexColors)
+
+
+def sortColors(hexColors):
+    def get_hsv(hexrgb):
+        # given a color specification in hex RGB, returns its HSV color:
+        hexrgb = hexrgb.lstrip("#")   # in case you have Web color specs
+        r, g, b = (int(hexrgb[i:i+2], 16) / 255.0 for i in range(0,5,2))
+        return colorsys.rgb_to_hsv(r, g, b)
+
+    # sort your list of RGB hex colors by hue:
+    hexColors.sort(key=get_hsv)
+    logger.info("hexColors sorted: %s", hexColors)
+    return(hexColors)
+
+
+def drawSortedColors(sorted_colorsList):
+    """
+    Format HEX to RGB
+    Draw colors
+    """
+    rgbColors = []
+    for color in sorted_colorsList:
+        rgbColors.append(matplotlib.colors.to_rgb(color))
+
+    logger.info("rgbColors 0-1: %s", rgbColors)
+    
+    # fig, axs = plt.subplots(2)
+    # axs[0].imshow([rbgColors])
+    # axs[1].imshow([sorted_colorsList])
+    plt.imshow([rgbColors])
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
