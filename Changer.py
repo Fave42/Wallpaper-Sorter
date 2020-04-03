@@ -10,7 +10,6 @@ from logzero import logger
 
 COLORPATH = '/etc/regolith/styles/costum-theme/color'
 
-
 def ChangeColors(colorsList):
     colors = [
         "#define color_base03    " + colorsList[0],
@@ -34,6 +33,16 @@ def ChangeColors(colorsList):
         logger.info("Updating color file.")
         for line in colors:
             colorFile.write(line + "\n")
-    
+
+
+def SetWallpaper(path, file):
+    wallpaper = path + "/" + file
+    logger.info("Updating wallpaper.")
+    command = 'feh --bg-max "' + wallpaper + '"'
+    os.system(command)
+
+
+def ResetI3():
     logger.info("Resetting i3")
     os.system('xrdb -merge ~/.Xresources-regolith && i3 reload')
+    

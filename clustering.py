@@ -14,13 +14,9 @@ import os
 import sys
 from logzero import logger
 
-CUR_PATH = os.path.dirname(os.path.realpath(__file__))
-WALLPAPER_PATH_LINUX = "/home/fabian/Mega/Bilder/Wallpaper"
-NUMBERCLUSTERS = 7
-
-import matplotlib
 from matplotlib import image as img
 from matplotlib import pyplot as plt
+import matplotlib
 
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -31,36 +27,30 @@ from scipy.cluster.vq import whiten, kmeans
 import colorsys
 import math
 
-from colorChanger import ChangeColors
+from Changer import ChangeColors, SetWallpaper, ResetI3
+
+CUR_PATH = os.path.dirname(os.path.realpath(__file__))
+WALLPAPER_PATH_LINUX = "/home/fabian/Mega/Bilder/Wallpaper"
+NUMBERCLUSTERS = 7
 
 
 def main():
     # ToDo: Add folder input
 
     for file in os.listdir(WALLPAPER_PATH_LINUX):
-            if "2" not in file:
+            if ".gif" not in file:
                 logger.info("Filename: %s", file)
                 df = loadPicture(WALLPAPER_PATH_LINUX, file)
                 rgbColorsList255, rgbColorsList = clustering(df)
                 hexColorsList = rgbToHex(rgbColorsList)
                 sorted_hexColorsList = sortColors(hexColorsList)
+                
                 ChangeColors(sorted_hexColorsList)
+                SetWallpaper(WALLPAPER_PATH_LINUX, file)
+                ResetI3()
+
                 drawSortedColors(sorted_hexColorsList)
                 sys.exit()
-
-
-# def iterateFiles():
-#     """
-#     Ignores any gifs and already categorized pictures
-#     """
-#     try:
-#         for file in os.listdir(WALLPAPER_PATH_LINUX):
-#             if ".gif" not in file:
-#                 colorProcessing(WALLPAPER_PATH_LINUX, file)
-#     except:
-#         for file in os.listdir(WALLPAPER_PATH_WIN):
-#             if ".gif" not in file:
-#                 colorProcessing(WALLPAPER_PATH_WIN, file)
 
 
 def loadPicture(path, file):
