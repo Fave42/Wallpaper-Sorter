@@ -17,7 +17,8 @@ import webcolors
 
 CUR_PATH = os.path.dirname(os.path.realpath(__file__))
 WALLPAPER_PATH_WIN = "D:\MEGA\Bilder\Wallpaper"
-WALLPAPER_PATH_LINUX = "/mnt/d/MEGA/Bilder/Wallpaper"
+# WALLPAPER_PATH_LINUX = "/mnt/d/MEGA/Bilder/Wallpaper"
+WALLPAPER_PATH_LINUX = "/home/fabian/Mega/Bilder/Wallpaper"
 # WALLPAPER_PATH_WIN = WALLPAPER_PATH_LINUX = os.path.join(CUR_PATH, "test_pics")
 
 
